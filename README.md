@@ -32,14 +32,13 @@ Abstract-syntax-tree-implementation-for-automatic-generation-of-building-energy-
 ```
 ## 🚀 Quick Start
 We provide a simple example to help you quickly understand the core workflow of our proposed method.
-### 1.Prerequisites
+### Prerequisites
 - Python 3.8 or higher
-- Required dependencies (install via pip):
-
+- Required dependencies : EnergyPlusV3.0+
+### Code
+codeGenerator is a code generator, main is a simulation framework, and http is a fixed template. The code generator converts main into an AST and adds http input and interactive code through identifiers
 ```bash
-pip install requests flask numpy pandas scikit-learn
-cd example
+python codeGenerator.py
 ```
-### 2.Prerequisites
-
-
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
