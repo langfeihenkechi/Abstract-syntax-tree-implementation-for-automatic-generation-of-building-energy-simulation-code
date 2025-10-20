@@ -15,19 +15,19 @@ Journal: Energy & Buildings
 ```bash
 Abstract-syntax-tree-implementation-for-automatic-generation-of-building-energy-simulation-code/main/
 ├── 📁 Experts/ # Expert manually constructed code
-│ ├── MG1.py # Manual Generation 1
-│ ├── MG2.py # Manual Generation 2
-│ ├── MG3.py # Manual Generation 3
-│ └── MG4.py # Manual Generation 
+│ ├── MG1.py # Manual Generation G1
+│ ├── MG2.py # Manual Generation G2
+│ ├── MG3.py # Manual Generation G3
+│ └── MG4.py # Manual Generation G4
 ├── 📁 auto-generate/ # Automated generation experimental code (Proposed Method)
 │ ├── G1Exp1.py # Generated Experiment 1
 │ ├── G1Exp2.py # Generated Experiment 2
 │ ├── G1Exp3.py # Generated Experiment 3
 │ └── G1Exp4.py # Generated Experiment 4
 ├── 📁 example/ # Quick Start Example
-│ ├── app.py # Example application main program
-│ ├── sample_dataset.csv # Sample dataset
-│ └── README.md # Example-specific instructions
+│ ├── codeGenerator.py # Example code generator
+│ ├── main.py # Main process
+│ └── httpCommunicate.py # Http
 └── 📄 README.md (This file)
 ```
 ## 🚀 Quick Start
