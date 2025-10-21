@@ -1,16 +1,32 @@
 import logging
+import os
 import queue
+import subprocess
 import sys
 import tempfile
 from datetime import time
 from logging.handlers import RotatingFileHandler
+from plistlib import Dict
+
 import OUTPUT_CONFIG
 import INPUT_CONFIG
 import SET_CONFIG
 import xlrd
+from numba import Any
 
-sys.path.insert(0, 'C:\EnergyPlusV22-1-0')
 from pyenergyplus.api import EnergyPlusAPI
+
+
+import yaml
+
+
+def load_yaml(file_path: str) -> Dict[str, Any]:
+    with open(file_path, 'r') as file:
+        data = yaml.safe_load(file)
+    return data
+INOUT_CONFIG = load_yaml(os.path.join(os.path.dirname(__file__), 'INPUT_CONFIG.yaml'))
+SETTINGS_CONFIG = load_yaml(os.path.join(os.path.dirname(__file__), 'SET_CONFIG.yaml'))
+OUTPUT_CONFIG = load_yaml(os.path.join(os.path.dirname(__file__), 'OUTPUT_CONFIG.yaml'))
 
 def setup_logging():
     """设置日志配置"""
@@ -263,10 +279,10 @@ class EnergyPlusCaculation:
         self.config = Config(SET_CONFIG)
 
         """self.input_communicate = InputCommunicate()"""
-        {{import}}
+        {{importInput}}
 
         self.energyplus_simulator = EnergyPlusSimulator(self.config.idf, self.config.weather, self.config.time, self.input_communicate.inputs)
-
+        {{importOutput}}
         """self.data_storage = DataStorage()"""
 
     def start(self):
