@@ -4,7 +4,16 @@ import os
 import re
 from typing import Dict, List, Optional, Any
 import logging
+import yaml
 
+
+def load_yaml(file_path: str) -> Dict[str, Any]:
+    with open(file_path, 'r') as file:
+        data = yaml.safe_load(file)
+    return data
+INOUT_CONFIG = load_yaml(os.path.join(os.path.dirname(__file__), 'INPUT_CONFIG.yaml'))
+SETTINGS_CONFIG = load_yaml(os.path.join(os.path.dirname(__file__), 'SET_CONFIG.yaml'))
+OUTPUT_CONFIG = load_yaml(os.path.join(os.path.dirname(__file__), 'OUTPUT_CONFIG.yaml'))
 
 class CodeGenerator:
     """AST-based code generator"""
@@ -39,7 +48,7 @@ class CodeGenerator:
                 self.generic_visit(node)
 
             def visit_FunctionDef(self, node):
-                # 检查函数体中的字符串表达式
+                # check if the function body contains a string literal
                 for stmt in node.body:
                     if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant):
                         if isinstance(stmt.value.value, str):
@@ -108,7 +117,7 @@ class CodeGenerator:
         Returns:
             generated_code:
         """
-        template_path = config.get('template_path', 'energyplus_template.py')
+        template_path = config.get('template_path')
         with open(template_path, 'r', encoding='utf-8') as f:
             template_code = f.read()
 
@@ -146,7 +155,6 @@ class CodeGenerator:
         return self.generate_code_from_template(template_code, replacements)
 
     def _generate_queue_init(self, queues_config: List[Dict]) -> str:
-
         lines = []
         for queue_config in queues_config:
             name = queue_config['name']
@@ -154,7 +162,6 @@ class CodeGenerator:
         return '\n'.join(lines)
 
     def _generate_input_imports(self, imports_config: List[Dict]) -> str:
-
         lines = []
         for import_config in imports_config:
             module = import_config['module']
@@ -165,37 +172,17 @@ class CodeGenerator:
         return '\n'.join(lines)
 
     def _generate_input_loaders(self, loaders_config: List[Dict]) -> str:
-
         lines = []
         for loader_config in loaders_config:
             module = loader_config['module']
             class_name = loader_config['class_name']
-            method_name = loader_config.get('method_name', 'get_instance')
-            lines.append(f"    import {module}")
-            lines.append(f"    def __get_{class_name.lower()}_instance(self):")
-            lines.append(f"        instance = {module}.{class_name}()")
-            lines.append(f"        self.instances['{class_name.lower()}'] = instance")
-        return '\n'.join(lines)
-
-    def _generate_exchange_handlers(self, handlers_config: List[Dict]) -> str:
-
-        lines = []
-        for handler_config in handlers_config:
-            name = handler_config['name']
-            component_type = handler_config['component_type']
-            control_type = handler_config['control_type']
-            lines.append(f"    def {name}(self, state):")
-            lines.append(f'        """')
-            lines.append(f"        Process {name} data")
-            lines.append(f'        """')
-            lines.append(f"        item = self.config.{name}.get()")
-            lines.append(f"        for d in item:")
-            lines.append(
-                f"            self.set_actuator_value(state, '{component_type}', '{control_type}', d.actuator_key, d.value)")
+            package = __import__(module)
+            object = getattr(package, class_name)
+            description = object.description
+            lines.append(description)
         return '\n'.join(lines)
 
     def _generate_imports(self, imports_config: List[str]) -> str:
-
         lines = []
         for import_line in imports_config:
             lines.append(f"        {import_line}")
@@ -212,82 +199,117 @@ class CodeGenerator:
         return '\n'.join(lines)
 
     def _generate_storage_init(self, storage_config: Dict) -> str:
-        lines = []
-        if 'mysql_config' in storage_config:
-            mysql_config = storage_config['mysql_config']
-            lines.append("    def init_mysql_storage(self):")
-            lines.append('        """init MySQL """')
-            lines.append(f"        host = '{mysql_config.get('host', 'localhost')}'")
-            lines.append(f"        user = '{mysql_config.get('user', 'root')}'")
-            lines.append(f"        password = '{mysql_config.get('password', '')}'")
-            lines.append(f"        database = '{mysql_config.get('database', 'energyplus')}'")
-            lines.append("        # 这里添加 MySQL 连接代码")
-        return '\n'.join(lines)
 
+        if 'mysql_config' in storage_config:
+            className = storage_config.get('class_name')
+            package = __import__(className)
+            object = getattr(package, className)
+            return object.description
+        else:
+            return ''
+
+
+def read_code_files(file_path):
+    """ read main process code """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            code = f.read()
+        return code
+    except Exception as e:
+        print(f"read code error: {e}")
+        return None, None
+
+def _get_config_from_request():
+    """ get config from request """
+    try:
+        config = {}
+        config.update('template_path', 'main.py')
+        #INPUT_CONFIG
+        config.update('INPUT_CONFIG')
+        for input_config in INPUT_CONFIG:
+            if input_config.get('type') == 'http':
+                config['input_imports'].append({
+                    'module': 'httpCommunicate',
+                    'class_name': 'HTTPCommunicate'
+                })
+
+            elif input_config.get('type') == 'modbus':
+                config['input_imports'].append({
+                    'module': 'modbusCommunicate',
+                    'class_name': 'ModbusCommunicate'
+                })
+
+            elif input_config.get('type') == 'websocket':
+                config['input_imports'].append({
+                    'module': 'websocketCommunicate',
+                    'class_name': 'WebSocketCommunicate'
+                })
+        #SET_CONFIG
+        config.update('queues')
+        config.update('callbacks')
+        config.update('exchange_handle')
+        dataDict = preprocess(SET_CONFIG.get('exchange_file'))
+
+        for data in dataDict:
+            if data[-1] == 'set_weather_flag':
+                config['callbacks'].append({
+                'type': 'before_predictor',
+                'handler_method': 'before_predictor_flag'
+            })
+                config['queues'].append({'name': 'weatherData'})
+                config['exchange_handle'].append({
+                    'name': 'weather_data'
+                })
+            elif data[-1] == 'set_hvac_manager_flag':
+                config['callbacks'].append({
+                'type': 'before_hvac_managers',
+                'handler_method': 'before_hvac_managers_flag'
+            })
+                config['queues'].append({'name': 'sensorData'})
+                config['exchange_handle'].append({
+                    'name': 'hvac_manager_flag'
+                })
+            elif data[-1] == 'set_loop_flag':
+                config['callbacks'].append({
+                'type': 'itrator_loop_flag',
+                'handler_method': 'itrator_loop_flag'
+            })
+                config['queues'].append({'name': 'controlData'})
+                config['exchange_handle'].append({
+                    'name': 'time_step_loop_flag'
+                })
+
+            elif data[-1] == 'set_heat_flag':
+                config['callbacks'].append({
+                'type': 'init_heat_flag',
+                'handler_method': 'init_heat_flag'
+                    })
+                config['exchange_handle'].append({
+                    'name': 'init_heat_flag'
+                })
+                config['queues'].append({'name': 'controlData'})
+            else:
+                pass
+        #OUTPUT_CONFIG
+        config.update('output_imports')
+        for output_config in OUTPUT_CONFIG:
+            if output_config.get('type') == 'mysql':
+                config['output_imports'].append({
+                    'module': 'mysqlCommunicate',
+                    'class_name': 'HTTPCommunicate'
+                })
+        return config
+    except Exception as e:
+        print(f"get config error: {e}")
+        return None
 
 def main():
     generator = CodeGenerator()
 
-    config = {
-        'template_path': 'energyplus_template.py',
-        'queues': [
-            {'name': 'weatherData'},
-            {'name': 'sensorData'},
-            {'name': 'controlData'}
-        ],
-        'input_imports': [
-            {
-                'module': 'httpCommunicate',
-                'class_name': 'HTTPCommunicate',
-                'instance_name': 'http'
-            },
-            {
-                'module': 'modbusCommunicate',
-                'class_name': 'ModbusCommunicate',
-                'instance_name': 'modbus'
-            }
-        ],
-        'input_loaders': [
-            {
-                'module': 'mqttCommunicate',
-                'class_name': 'MQTTCommunicate'
-            }
-        ],
-        'exchange_handlers': [
-            {
-                'name': 'time_step_weather',
-                'component_type': 'Weather Data',
-                'control_type': 'Outdoor Dry Bulb'
-            },
-            {
-                'name': 'time_step_sensor',
-                'component_type': 'Sensor',
-                'control_type': 'Reading'
-            }
-        ],
-        'imports': [
-            "self.input_communicate = InputCommunicate()",
-            "self.data_storage = DataStorage()"
-        ],
-        'callbacks': [
-            {
-                'type': 'begin_zone_timestep_before_set_current_weather',
-                'handler_method': 'time_step_weather'
-            },
-            {
-                'type': 'after_component_get_input',
-                'handler_method': 'time_step_sensor'
-            }
-        ],
-        'storage_init': {
-            'mysql_config': {
-                'host': 'localhost',
-                'user': 'energyplus_user',
-                'password': 'password123',
-                'database': 'energyplus_data'
-            }
-        }
-    }
+    config = _get_config_from_request()
+    template = read_code_files('main.py')
+
+
 
     try:
         generated_code = generator.generate_energyplus_code(config)
