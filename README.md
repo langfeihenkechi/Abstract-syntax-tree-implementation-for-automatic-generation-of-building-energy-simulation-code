@@ -27,6 +27,9 @@ Abstract-syntax-tree-implementation-for-automatic-generation-of-building-energy-
 ├── 📁 example/ # Quick Start Example
 │ ├── codeGenerator.py # Example code generator
 │ ├── main.py # Main process
+│ ├── INPUT_CONFIG.yaml # input config
+│ ├── SET_CONFIG.yaml # set config
+│ ├── OUT_CONFIG.yaml # output config
 │ └── httpCommunicate.py # Http
 └── 📄 README.md (This file)
 ```
@@ -36,7 +39,7 @@ We provide a simple example to help you quickly understand the core workflow of 
 - Python 3.8 or higher
 - Required dependencies : EnergyPlusV3.0+
 ### Start
-codeGenerator is a code generator, main is a simulation framework, and http is a fixed template. The code generator converts main into an AST and adds http input and interactive code through identifiers
+codeGenerator is a code generator, main is a simulation framework, and http is a fixed template. The code generator converts main into an AST and adds http input and interactive code through identifiers. Yaml files are config file.
 ```bash
 cd example
 python codeGenerator.py
