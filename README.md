@@ -1,6 +1,6 @@
 # Abstract Syntax Tree Implementation for Automatic Generation of Building Energy Simulation Code
 
-[![License: Apache](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache](https://img.shields.io/badge/License-Apache-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 ## 📖 Introduction
 This repository contains the implementation code for building energy simulation programs based on Abstract Syntax Tree (AST), along with related research papers. The project enables automatic generation of building energy simulation code through natural language processing and template-based approaches.
