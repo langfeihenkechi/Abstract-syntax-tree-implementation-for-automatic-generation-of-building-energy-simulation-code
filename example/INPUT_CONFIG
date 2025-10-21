@@ -1,0 +1,4 @@
+type: HTTP
+name: link1
+url: 127.0.0.1:666
+timeout: 120

@@ -1,0 +1,5 @@
+weather_file: weather.epw
+idf_file: exampleA.idf
+time: 72
+exchangeDataDict: exampleDict.xlsx
+
