@@ -35,9 +35,10 @@ We provide a simple example to help you quickly understand the core workflow of 
 ### Prerequisites
 - Python 3.8 or higher
 - Required dependencies : EnergyPlusV3.0+
-### Code
+### Start
 codeGenerator is a code generator, main is a simulation framework, and http is a fixed template. The code generator converts main into an AST and adds http input and interactive code through identifiers
 ```bash
+cd example
 python codeGenerator.py
 ```
 ## 📄 License
